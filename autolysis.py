@@ -130,7 +130,7 @@ def process_dataset(file_path):
                 logging.error(f"Failed to generate distribution plot: {e}")
 
        # Box plot for the numerical columns
-         if numeric_df.shape[1] > 1:
+        if numeric_df.shape[1] > 1:
              try:
                  plt.figure(figsize=(12, 6))
                  sns.boxplot(data=numeric_df)
@@ -148,7 +148,7 @@ def process_dataset(file_path):
 
         # Bar plot for missing data
         missing_data = df.isnull().sum()
-          if missing_data.sum() > 0:
+         if missing_data.sum() > 0:
               try:
                   plt.figure(figsize=(12, 6))
                   missing_data[missing_data > 0].plot(kind='bar', color='salmon')
