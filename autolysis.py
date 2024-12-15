@@ -97,70 +97,70 @@ def process_dataset(file_path):
     analysis = query_llm(messages)
 
     # Generate Visualizations with Exception Handling
-  charts = []
-  if len(df.columns) >= 2:
-      # Correlation heatmap
-     numeric_df = df.select_dtypes(include="number")
-    if numeric_df.shape[1] > 1:
-         try:
-             plt.figure(figsize=(10, 8))
-             sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
-             plt.title(f"{dataset_name} Correlation Heatmap")
-             heatmap_file = os.path.join(output_dir, f"{dataset_name}_correlation_heatmap.png")
-             plt.savefig(heatmap_file)
-             charts.append(heatmap_file)
-             plt.close()
-         except Exception as e:
-             logging.error(f"Failed to generate correlation heatmap: {e}")
+    charts = []
+    if len(df.columns) >= 2:
+        # Correlation heatmap
+        numeric_df = df.select_dtypes(include="number")
+        if numeric_df.shape[1] > 1:
+             try:
+                 plt.figure(figsize=(10, 8))
+                 sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+                 plt.title(f"{dataset_name} Correlation Heatmap")
+                 heatmap_file = os.path.join(output_dir, f"{dataset_name}_correlation_heatmap.png")
+                 plt.savefig(heatmap_file)
+                 charts.append(heatmap_file)
+                 plt.close()
+             except Exception as e:
+                 logging.error(f"Failed to generate correlation heatmap: {e}")
 
-    # Distribution of the first numerical column
-    if numeric_df.shape[1] > 0:
-        try:
-            first_numeric = numeric_df.columns[0]
-            plt.figure(figsize=(8, 6))
-            sns.histplot(numeric_df[first_numeric].dropna(), kde=True, bins=30)
-            plt.title(f"Distribution of {first_numeric}")
-            plt.xlabel(first_numeric)
-            plt.ylabel("Frequency")
-            dist_file = os.path.join(output_dir, f"{dataset_name}_distribution.png")
-            plt.savefig(dist_file)
-            charts.append(dist_file)
-            plt.close()
-        except Exception as e:
-            logging.error(f"Failed to generate distribution plot: {e}")
+       # Distribution of the first numerical column
+        if numeric_df.shape[1] > 0:
+            try:
+                first_numeric = numeric_df.columns[0]
+                plt.figure(figsize=(8, 6))
+                sns.histplot(numeric_df[first_numeric].dropna(), kde=True, bins=30)
+                plt.title(f"Distribution of {first_numeric}")
+                plt.xlabel(first_numeric)
+                plt.ylabel("Frequency")
+                dist_file = os.path.join(output_dir, f"{dataset_name}_distribution.png")
+                plt.savefig(dist_file)
+                charts.append(dist_file)
+                plt.close()
+            except Exception as e:
+                logging.error(f"Failed to generate distribution plot: {e}")
 
-    # Box plot for the numerical columns
-    if numeric_df.shape[1] > 1:
-        try:
-            plt.figure(figsize=(12, 6))
-            sns.boxplot(data=numeric_df)
-            plt.title(f"Boxplot of {dataset_name}")
-            plt.ylabel("Values")
-            plt.xlabel("Features")
-            plt.xticks(rotation=45, ha='right', fontsize=10)
-            plt.tight_layout()
-            boxplot_file = os.path.join(output_dir, f"{dataset_name}_boxplot.png")
-            plt.savefig(boxplot_file)
-            charts.append(boxplot_file)
-            plt.close()
-        except Exception as e:
-            logging.error(f"Failed to generate box plot: {e}")
+       # Box plot for the numerical columns
+         if numeric_df.shape[1] > 1:
+             try:
+                 plt.figure(figsize=(12, 6))
+                 sns.boxplot(data=numeric_df)
+                 plt.title(f"Boxplot of {dataset_name}")
+                 plt.ylabel("Values")
+                 plt.xlabel("Features")
+                 plt.xticks(rotation=45, ha='right', fontsize=10)
+                 plt.tight_layout()
+                 boxplot_file = os.path.join(output_dir, f"{dataset_name}_boxplot.png")
+                 plt.savefig(boxplot_file)
+                 charts.append(boxplot_file)
+                 plt.close()
+             except Exception as e:
+                 logging.error(f"Failed to generate box plot: {e}")
 
-    # Bar plot for missing data
-    missing_data = df.isnull().sum()
-    if missing_data.sum() > 0:
-        try:
-            plt.figure(figsize=(12, 6))
-            missing_data[missing_data > 0].plot(kind='bar', color='salmon')
-            plt.title(f"Missing Data in {dataset_name}")
-            plt.ylabel('Number of Missing Values')
-            plt.xlabel("Features")
-            missing_data_file = os.path.join(output_dir, f"{dataset_name}_missing_data.png")
-            plt.savefig(missing_data_file)
-            charts.append(missing_data_file)
-            plt.close()
-        except Exception as e:
-            logging.error(f"Failed to generate missing data bar plot: {e}")
+        # Bar plot for missing data
+        missing_data = df.isnull().sum()
+          if missing_data.sum() > 0:
+              try:
+                  plt.figure(figsize=(12, 6))
+                  missing_data[missing_data > 0].plot(kind='bar', color='salmon')
+                  plt.title(f"Missing Data in {dataset_name}")
+                  plt.ylabel('Number of Missing Values')
+                 plt.xlabel("Features")
+                 missing_data_file = os.path.join(output_dir, f"{dataset_name}_missing_data.png")
+                 plt.savefig(missing_data_file)
+                 charts.append(missing_data_file)
+                 plt.close()
+              except Exception as e:
+                    logging.error(f"Failed to generate missing data bar plot: {e}")
 
 
     # Request narrative from LLM
