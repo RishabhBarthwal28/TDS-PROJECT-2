@@ -97,21 +97,21 @@ def process_dataset(file_path):
     analysis = query_llm(messages)
 
     # Generate Visualizations with Exception Handling
-charts = []
-if len(df.columns) >= 2:
-    # Correlation heatmap
-    numeric_df = df.select_dtypes(include="number")
+  charts = []
+  if len(df.columns) >= 2:
+      # Correlation heatmap
+     numeric_df = df.select_dtypes(include="number")
     if numeric_df.shape[1] > 1:
-        try:
-            plt.figure(figsize=(10, 8))
-            sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
-            plt.title(f"{dataset_name} Correlation Heatmap")
-            heatmap_file = os.path.join(output_dir, f"{dataset_name}_correlation_heatmap.png")
-            plt.savefig(heatmap_file)
-            charts.append(heatmap_file)
-            plt.close()
-        except Exception as e:
-            logging.error(f"Failed to generate correlation heatmap: {e}")
+         try:
+             plt.figure(figsize=(10, 8))
+             sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+             plt.title(f"{dataset_name} Correlation Heatmap")
+             heatmap_file = os.path.join(output_dir, f"{dataset_name}_correlation_heatmap.png")
+             plt.savefig(heatmap_file)
+             charts.append(heatmap_file)
+             plt.close()
+         except Exception as e:
+             logging.error(f"Failed to generate correlation heatmap: {e}")
 
     # Distribution of the first numerical column
     if numeric_df.shape[1] > 0:
