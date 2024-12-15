@@ -148,44 +148,44 @@ def process_dataset(file_path):
 
         # Bar plot for missing data
         missing_data = df.isnull().sum()
-         if missing_data.sum() > 0:
-              try:
-                  plt.figure(figsize=(12, 6))
-                  missing_data[missing_data > 0].plot(kind='bar', color='salmon')
-                  plt.title(f"Missing Data in {dataset_name}")
-                  plt.ylabel('Number of Missing Values')
-                 plt.xlabel("Features")
-                 missing_data_file = os.path.join(output_dir, f"{dataset_name}_missing_data.png")
-                 plt.savefig(missing_data_file)
-                 charts.append(missing_data_file)
-                 plt.close()
-              except Exception as e:
-                    logging.error(f"Failed to generate missing data bar plot: {e}")
+        if missing_data.sum() > 0:
+            try:
+                plt.figure(figsize=(12, 6))
+                missing_data[missing_data > 0].plot(kind='bar', color='salmon')
+                plt.title(f"Missing Data in {dataset_name}")
+                plt.ylabel('Number of Missing Values')
+                plt.xlabel("Features")
+                missing_data_file = os.path.join(output_dir, f"{dataset_name}_missing_data.png")
+                plt.savefig(missing_data_file)
+                charts.append(missing_data_file)
+                plt.close()
+            except Exception as e:
+                logging.error(f"Failed to generate missing data bar plot: {e}")
 
 
     # Request narrative from LLM
-    story_messages = [
+        story_messages = [
         {"role": "system", "content": "You are a data storytelling assistant."},
-        {"role": "user", "content": f"Based on this analysis:\n\n{analysis}\n\nGenerate a narrative about the insights and implications of this dataset. Include details about the correlations, missing values, and visualizations."}
-    ]
-    story = query_llm(story_messages)
+        {"role": "user", "content": f"Based on this analysis:\n\n{analysis}\n\nGenerate a narrative about the insights and implications of this dataset. Include details about the correlations, missing values,    and visualizations."}
+        ]
+        story = query_llm(story_messages)
 
     # Save README.md
-    readme_file = os.path.join(output_dir, "README.md")
-    try:
-        with open(readme_file, "w") as f:
-            f.write("# Analysis Report\n\n")
-            f.write(story)
-            f.write("\n\n## Visualizations\n\n")
-            for chart in charts:
-                f.write(f"![{os.path.basename(chart)}]({chart})\n")
-        logging.info(f"README generated: {readme_file}")
-    except Exception as e:
-        logging.error(f"Error saving README file: {e}")
+        readme_file = os.path.join(output_dir, "README.md")
+        try:
+            with open(readme_file, "w") as f:
+                f.write("# Analysis Report\n\n")
+                f.write(story)
+                f.write("\n\n## Visualizations\n\n")
+                for chart in charts:
+                    f.write(f"![{os.path.basename(chart)}]({chart})\n")
+            logging.info(f"README generated: {readme_file}")
+        except Exception as e:
+            logging.error(f"Error saving README file: {e}")
 
-    logging.info(f"Analysis complete for {dataset_name}. Files generated:")
-    for chart in charts:
-        logging.info(f"- {chart}")
+        logging.info(f"Analysis complete for {dataset_name}. Files generated:")
+        for chart in charts:
+            logging.info(f"- {chart}")
 
 def main():
     """Main function to process datasets."""
@@ -200,4 +200,4 @@ def main():
             logging.error(f"Invalid file path or not a CSV file: {file_path}")
 
 if __name__ == "__main__":
-    main()
+    main()
