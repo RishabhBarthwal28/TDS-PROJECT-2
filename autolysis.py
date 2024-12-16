@@ -71,6 +71,24 @@ def query_llm(function_call):
         print(f"Error querying AI Proxy: {e}")
         return "Error: Unable to generate narrative."
 
+
+def process_dataset(file_path):
+    """Processes a dataset: generates analysis, visualizations, and README."""
+    dataset_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    # Create output directory
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    try:
+        # Load dataset
+        df = pd.read_csv(file_path, encoding="latin1")
+        logging.info(f"Successfully loaded dataset: {dataset_name}")
+    except Exception as e:
+        logging.error(f"Error loading file {file_path}: {e}")
+        return
+
+        
     # Generate Visualizations
     charts = []
     palette = "coolwarm"  # Define consistent color palette
