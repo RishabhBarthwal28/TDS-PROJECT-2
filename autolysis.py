@@ -37,7 +37,6 @@ def query_llm(function_call):
     """
     Queries the LLM with the function call for dynamic analysis-based prompts.
     """
-    # Queries the LLM for insights and returns the response.
     prompt = f"""
     Use the following information to generate a detailed analysis report:
     - {function_call}
@@ -51,7 +50,6 @@ def query_llm(function_call):
         payload = {
             "model": "gpt-4o-mini",  # Supported chat model
             "messages": [
-                {"role": "system", "content": "You are a helpful data analysis assistant. Provide insights, suggestions, and implications based on the given analysis and visualizations."},
                 {"role": "user", "content": prompt},
             ],
         }
@@ -65,11 +63,13 @@ def query_llm(function_call):
         ]
         result = subprocess.run(curl_command, capture_output=True, text=True)
         if result.returncode == 0:
-            pass
+            response_data = json.loads(result.stdout)
+            return response_data["choices"][0]["message"]["content"]
+        else:
+            raise Exception(f"Error in curl request: {result.stderr}")
     except Exception as e:
         print(f"Error querying AI Proxy: {e}")
         return "Error: Unable to generate narrative."
-
 
     # Generate Visualizations
     charts = []
@@ -172,3 +172,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
