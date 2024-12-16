@@ -65,9 +65,7 @@ def query_llm(function_call):
         ]
         result = subprocess.run(curl_command, capture_output=True, text=True)
         if result.returncode == 0:
-            return result.stdout
-        else:
-            raise Exception(f"Failed to execute curl command: {result.stderr}")
+            pass
     except Exception as e:
         print(f"Error querying AI Proxy: {e}")
         return "Error: Unable to generate narrative."
