@@ -88,6 +88,29 @@ def process_dataset(file_path):
         logging.error(f"Error loading file {file_path}: {e}")
         return
 
+    # Perform basic analysis
+    summary = df.describe(include="all").to_string()
+    missing_values = df.isnull().sum().to_string()
+    sample_data = df.head(5).to_string()
+
+    # Additional In-Script Analysis
+    numeric_cols = df.select_dtypes(include='number')
+    correlation_ranking = numeric_cols.corr().unstack().sort_values(ascending=False)
+    high_corr_pairs = correlation_ranking[correlation_ranking < 1.0].head(5)
+    logging.info("Top 5 correlated feature pairs:\n" + str(high_corr_pairs))
+
+    categorical_cols = df.select_dtypes(include='object')
+    if not categorical_cols.empty:
+        top_categories = {col: df[col].value_counts().head(3).to_dict() for col in categorical_cols.columns}
+        logging.info("Top categories in each categorical column:\n" + str(top_categories))
+
+    # Query LLM for analysis
+    messages = [
+        {"role": "system", "content": "You are a data analysis assistant."},
+        {"role": "user", "content": f"Analyze this dataset:\n\nColumns: {list(df.columns)}\n\nFirst 5 Rows:\n{sample_data}\n\nSummary:\n{summary[:1000]}\n\nMissing Values:\n{missing_values}\n\nTop Correlations:\n{high_corr_pairs}\n\nTop Categories:\n{top_categories if not categorical_cols.empty else 'None'}"}
+    ]
+    analysis = query_llm(messages)
+
         
     # Generate Visualizations
     charts = []
