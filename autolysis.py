@@ -33,76 +33,45 @@ if not api_key:
 # Define LLM interaction with retry logic
 base_url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 
-def query_llm(messages, retries=3):
-    headers = {"Authorization": f"Bearer {api_key}"}
-    data = {
-        "model": "gpt-4o-mini",
-        "messages": messages,
-        "functions": [
-            {
-                "name": "analyze_dataset",
-                "description": "Perform data analysis on a dataset and generate insights.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "columns": {"type": "array", "items": {"type": "string"}},
-                        "summary": {"type": "string"},
-                        "missing_values": {"type": "string"},
-                    },
-                    "required": ["columns", "summary"],
-                },
-            }
-        ],
-        "function_call": {"name": "analyze_dataset"}
-    }
-    for attempt in range(retries):
-        try:
-            response = httpx.post(base_url, json=data, headers=headers, timeout=60.0)
-            response.raise_for_status()
-            function_call = response.json()["choices"][0]["message"]["function_call"]
-            return function_call["arguments"]  # Extracts the arguments used in the function call
-        except httpx.ReadTimeout:
-            if attempt < retries - 1:
-                logging.warning(f"Timeout error, retrying... ({attempt + 1}/{retries})")
-                time.sleep(2)
-            else:
-                logging.error("API request timed out after multiple attempts.")
-                raise Exception("API request timed out after multiple attempts.")
-        except Exception as e:
-            if attempt < retries - 1:
-                logging.warning(f"Error: {e}, retrying... ({attempt + 1}/{retries})")
-                time.sleep(2)
-            else:
-                logging.error(f"API request failed after {retries} attempts: {e}")
-                raise Exception(f"API request failed after {retries} attempts: {e}")
-
-
-def process_dataset(file_path):
-    """Process a dataset."""
-    dataset_name = os.path.splitext(os.path.basename(file_path))[0]
-
-    # Create output directory
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-
+def query_llm(function_call):
+    """
+    Queries the LLM with the function call for dynamic analysis-based prompts.
+    """
+    # Queries the LLM for insights and returns the response.
+    prompt = f"""
+    Use the following information to generate a detailed analysis report:
+    - {function_call}
+    """
     try:
-        df = pd.read_csv(file_path, encoding="latin1")
-        logging.info(f"Successfully loaded dataset: {dataset_name}")
+        url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {AIPROXY_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "gpt-4o-mini",  # Supported chat model
+            "messages": [
+                {"role": "system", "content": "You are a helpful data analysis assistant. Provide insights, suggestions, and implications based on the given analysis and visualizations."},
+                {"role": "user", "content": prompt},
+            ],
+        }
+        payload_json = json.dumps(payload)
+        curl_command = [
+            "curl",
+            "-X", "POST", url,
+            "-H", f"Authorization: Bearer {AIPROXY_TOKEN}",
+            "-H", "Content-Type: application/json",
+            "-d", payload_json
+        ]
+        result = subprocess.run(curl_command, capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            raise Exception(f"Failed to execute curl command: {result.stderr}")
     except Exception as e:
-        logging.error(f"Error loading file {file_path}: {e}")
-        return
+        print(f"Error querying AI Proxy: {e}")
+        return "Error: Unable to generate narrative."
 
-    # Perform basic analysis
-    summary = df.describe(include="all").to_string()
-    missing_values = df.isnull().sum().to_string()
-    sample_data = df.head(5).to_string()
-
-    # Query LLM for analysis
-    messages = [
-        {"role": "system", "content": "You are a data analysis assistant."},
-        {"role": "user", "content": f"Analyze this dataset:\n\nColumns: {list(df.columns)}\n\nFirst 5 Rows:\n{sample_data}\n\nSummary:\n{summary[:1000]}\n\nMissing Values:\n{missing_values}"}
-    ]
-    analysis = query_llm(messages)
 
     # Generate Visualizations
     charts = []
