@@ -35,12 +35,32 @@ base_url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
 
 def query_llm(messages, retries=3):
     headers = {"Authorization": f"Bearer {api_key}"}
-    data = {"model": "gpt-4o-mini", "messages": messages}
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": messages,
+        "functions": [
+            {
+                "name": "analyze_dataset",
+                "description": "Perform data analysis on a dataset and generate insights.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "columns": {"type": "array", "items": {"type": "string"}},
+                        "summary": {"type": "string"},
+                        "missing_values": {"type": "string"},
+                    },
+                    "required": ["columns", "summary"],
+                },
+            }
+        ],
+        "function_call": {"name": "analyze_dataset"}
+    }
     for attempt in range(retries):
         try:
             response = httpx.post(base_url, json=data, headers=headers, timeout=60.0)
             response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
+            function_call = response.json()["choices"][0]["message"]["function_call"]
+            return function_call["arguments"]  # Extracts the arguments used in the function call
         except httpx.ReadTimeout:
             if attempt < retries - 1:
                 logging.warning(f"Timeout error, retrying... ({attempt + 1}/{retries})")
@@ -55,6 +75,7 @@ def query_llm(messages, retries=3):
             else:
                 logging.error(f"API request failed after {retries} attempts: {e}")
                 raise Exception(f"API request failed after {retries} attempts: {e}")
+
 
 def process_dataset(file_path):
     """Process a dataset."""
