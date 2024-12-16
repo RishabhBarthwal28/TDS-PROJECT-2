@@ -20,8 +20,6 @@ import seaborn as sns
 import httpx
 import time
 import logging
-import json
-import subprocess
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -32,42 +30,31 @@ if not api_key:
     logging.error("API key not found. Please set the AIPROXY_TOKEN environment variable.")
     sys.exit(1)
 
-def query_llm(function_call):
-    """
-    Queries the LLM with the function call for dynamic analysis-based prompts.
-    """
-    # Queries the LLM for insights and returns the response.
-    prompt = f"""
-    Use the following information to generate a detailed analysis report:
-    - {function_call}
-    """
-    try:
-        url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {AIPROXY_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": "gpt-4o-mini",  # Supported chat model
-            "messages": [
-                {"role": "system", "content": "You are a helpful data analysis assistant. Provide insights, suggestions, and implications based on the given analysis and visualizations."},
-                {"role": "user", "content": prompt},
-            ],
-        }
-        payload_json = json.dumps(payload)
-        curl_command = [
-            "curl",
-            "-X", "POST", url,
-            "-H", f"Authorization: Bearer {AIPROXY_TOKEN}",
-            "-H", "Content-Type: application/json",
-            "-d", payload_json
-        ]
-        result = subprocess.run(curl_command, capture_output=True, text=True)
-        if result.returncode == 0:
-            pass
-    except Exception as e:
-        print(f"Error querying AI Proxy: {e}")
-        return "Error: Unable to generate narrative."
+# Define LLM interaction with retry logic
+base_url = "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions"
+
+def query_llm(messages, retries=3):
+    headers = {"Authorization": f"Bearer {api_key}"}
+    data = {"model": "gpt-4o-mini", "messages": messages}
+    for attempt in range(retries):
+        try:
+            response = httpx.post(base_url, json=data, headers=headers, timeout=60.0)
+            response.raise_for_status()
+            return response.json()["choices"][0]["message"]["content"]
+        except httpx.ReadTimeout:
+            if attempt < retries - 1:
+                logging.warning(f"Timeout error, retrying... ({attempt + 1}/{retries})")
+                time.sleep(2)
+            else:
+                logging.error("API request timed out after multiple attempts.")
+                raise Exception("API request timed out after multiple attempts.")
+        except Exception as e:
+            if attempt < retries - 1:
+                logging.warning(f"Error: {e}, retrying... ({attempt + 1}/{retries})")
+                time.sleep(2)
+            else:
+                logging.error(f"API request failed after {retries} attempts: {e}")
+                raise Exception(f"API request failed after {retries} attempts: {e}")
 
 def process_dataset(file_path):
     """Process a dataset."""
@@ -90,16 +77,15 @@ def process_dataset(file_path):
     sample_data = df.head(5).to_string()
 
     # Query LLM for analysis
-    function_call = {
-        "columns": list(df.columns),
-        "summary": summary[:1000],
-        "missing_values": missing_values,
-    }
-    analysis = query_llm(function_call)
+    messages = [
+        {"role": "system", "content": "You are a data analysis assistant."},
+        {"role": "user", "content": f"Analyze this dataset:\n\nColumns: {list(df.columns)}\n\nFirst 5 Rows:\n{sample_data}\n\nSummary:\n{summary[:1000]}\n\nMissing Values:\n{missing_values}"}
+    ]
+    analysis = query_llm(messages)
 
     # Generate Visualizations
     charts = []
-    palette = "coolwarm"
+    palette = "coolwarm"  # Define consistent color palette
     if len(df.columns) >= 2:
         # Correlation heatmap
         numeric_df = df.select_dtypes(include="number")
@@ -160,13 +146,19 @@ def process_dataset(file_path):
             charts.append(missing_data_file)
             plt.close()
 
+    # Request narrative from LLM
+    story_messages = [
+        {"role": "system", "content": "You are a data storytelling assistant."},
+        {"role": "user", "content": f"Based on this analysis:\n\n{analysis}\n\nGenerate a narrative about the insights and implications of this dataset."}
+    ]
+    story = query_llm(story_messages)
+
     # Save README.md
     readme_file = os.path.join(output_dir, "README.md")
     try:
         with open(readme_file, "w") as f:
             f.write("# Analysis Report\n\n")
-            f.write("## Insights\n")
-            f.write(analysis or "Error: No insights available.")
+            f.write(story)
             f.write("\n\n## Visualizations\n\n")
             for chart in charts:
                 f.write(f"![{os.path.basename(chart)}]({chart})\n")
