@@ -12,8 +12,6 @@
 # ]
 # ///
 
-
-
 import os
 import sys
 import pandas as pd
@@ -87,14 +85,18 @@ def process_dataset(file_path):
 
     # Generate Visualizations
     charts = []
+    palette = "coolwarm"  # Define consistent color palette
     if len(df.columns) >= 2:
         # Correlation heatmap
         numeric_df = df.select_dtypes(include="number")
         if numeric_df.shape[1] > 1:
             plt.figure(figsize=(10, 8))
-            sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+            sns.heatmap(numeric_df.corr(), annot=True, cmap=palette, fmt=".2f")
+            plt.title(f"{dataset_name} Correlation Heatmap", fontsize=16)
+            plt.xticks(rotation=45, fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.tight_layout()
             heatmap_file = os.path.join(output_dir, f"{dataset_name}_correlation_heatmap.png")
-            plt.title(f"{dataset_name} Correlation Heatmap")
             plt.savefig(heatmap_file)
             charts.append(heatmap_file)
             plt.close()
@@ -103,9 +105,14 @@ def process_dataset(file_path):
         if numeric_df.shape[1] > 0:
             first_numeric = numeric_df.columns[0]
             plt.figure(figsize=(8, 6))
-            sns.histplot(numeric_df[first_numeric].dropna(), kde=True, bins=30)
+            sns.histplot(numeric_df[first_numeric].dropna(), kde=True, bins=30, color="skyblue")
+            plt.title(f"Distribution of {first_numeric}", fontsize=16)
+            plt.xlabel(first_numeric, fontsize=12)
+            plt.ylabel("Frequency", fontsize=12)
+            plt.xticks(fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.tight_layout()
             dist_file = os.path.join(output_dir, f"{dataset_name}_distribution.png")
-            plt.title(f"Distribution of {first_numeric}")
             plt.savefig(dist_file)
             charts.append(dist_file)
             plt.close()
@@ -113,9 +120,10 @@ def process_dataset(file_path):
         # Box plot for the numerical columns
         if numeric_df.shape[1] > 1:
             plt.figure(figsize=(12, 6))
-            sns.boxplot(data=numeric_df)
-            plt.title(f"Boxplot of {dataset_name}")
+            sns.boxplot(data=numeric_df, palette=palette)
+            plt.title(f"Boxplot of {dataset_name}", fontsize=16)
             plt.xticks(rotation=45, ha='right', fontsize=10)
+            plt.yticks(fontsize=10)
             plt.tight_layout()
             boxplot_file = os.path.join(output_dir, f"{dataset_name}_boxplot.png")
             plt.savefig(boxplot_file)
@@ -127,8 +135,12 @@ def process_dataset(file_path):
         if missing_data.sum() > 0:
             plt.figure(figsize=(12, 6))
             missing_data[missing_data > 0].plot(kind='bar', color='salmon')
-            plt.title(f"Missing Data in {dataset_name}")
-            plt.ylabel('Number of Missing Values')
+            plt.title(f"Missing Data in {dataset_name}", fontsize=16)
+            plt.xlabel("Columns", fontsize=12)
+            plt.ylabel("Number of Missing Values", fontsize=12)
+            plt.xticks(rotation=45, fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.tight_layout()
             missing_data_file = os.path.join(output_dir, f"{dataset_name}_missing_data.png")
             plt.savefig(missing_data_file)
             charts.append(missing_data_file)
